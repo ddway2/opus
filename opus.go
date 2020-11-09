@@ -6,8 +6,8 @@ package opus
 
 /*
 // Link opus using pkg-config.
-#cgo CFLAGS: -Ithird_party/opus/include/opus
-#cgo LDFLAGS: -Lthird_party/opus/lib -lopus
+#cgo windows CFLAGS: -Ithird_party/opus/include/opus
+#cgo windows LDFLAGS: -Lthird_party/opus/lib/windows -lopus
 #include <opus.h>
 */
 import "C"

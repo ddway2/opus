@@ -176,6 +176,17 @@ Mac:
 brew install pkg-config opus opusfile
 ```
 
+Windows:
+
+Pre-requires: 
+* Install MinGW W64
+* Build from sources opus (https://github.com/xiph/opus) with following
+```sh
+mkdir build && cd build
+cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX=../Install ..
+make install
+```
+
 ### Building Without `libopusfile`
 
 This package can be built without `libopusfile` by using the build tag `nolibopusfile`.
