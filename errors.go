@@ -9,7 +9,7 @@ import (
 )
 
 /*
-#cgo CFLAGS: -Ithird_party/opus/include
+#cgo CFLAGS: -Ithird_party/opus/include/opus
 #cgo LDFLAGS: -Lthird_party/opus/lib -lopus
 #include <opus.h>
 */
