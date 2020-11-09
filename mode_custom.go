@@ -4,9 +4,9 @@ package opus
 #cgo windows CFLAGS: -Ithird_party/opus/include/opus
 #cgo windows LDFLAGS: -Lthird_party/opus/lib/windows -lopus
 #include <opus.h>
+#include <opus_custom.h>
 
 */
-
 import "C"
 
 type OpusMode struct {
@@ -24,7 +24,7 @@ func NewOpusMode(sample_rate int32, frame_size int) (*OpusMode, error) {
 
 func (mode *OpusMode) Init(sample_rate int32, frame_size int) error {
 	var err C.int
-	mode.p = C.opus_custom_mode_create(C.opus_int32(sample_rate), C.int(frame_size), &err)
+	mode.P = C.opus_custom_mode_create(C.opus_int32(sample_rate), C.int(frame_size), &err)
 	if int(err) != 0 {
 		return Error(int(err))
 	}
@@ -33,8 +33,8 @@ func (mode *OpusMode) Init(sample_rate int32, frame_size int) error {
 }
 
 func (mode *OpusMode) Close() {
-	if mode.p != nil {
-		C.opus_custom_mode_destroy(mode.p)
+	if mode.P != nil {
+		C.opus_custom_mode_destroy(mode.P)
 	}
-	mode.p = nil
+	mode.P = nil
 }

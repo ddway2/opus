@@ -9,14 +9,14 @@ import (
 #cgo windows CFLAGS: -Ithird_party/opus/include/opus
 #cgo windows LDFLAGS: -Lthird_party/opus/lib/windows -lopus
 #include <opus.h>
+#include <opus_custom.h>
 
 int
-bridge_decoder_custom_get_last_packet_duration(OpusDecoder *st, opus_int32 *samples)
+bridge_decoder_custom_get_last_packet_duration(OpusCustomDecoder *st, opus_int32 *samples)
 {
 	return opus_custom_decoder_ctl(st, OPUS_GET_LAST_PACKET_DURATION(samples));
 }
 */
-
 import "C"
 
 type DecoderCustom struct {
@@ -44,11 +44,11 @@ func (dec *DecoderCustom) Init(channels int, mode *OpusMode) error {
 		return fmt.Errorf("Number of channels must be 1 or 2: %d", channels)
 	}
 
-	size := C.opus_custom_decoder_get_size(C.int(channels))
+	size := C.opus_custom_decoder_get_size(mode.P, C.int(channels))
 	dec.channels = channels
 	dec.mode = mode
 	dec.mem = make([]byte, size)
-	dec.p = (*C.OpusCustomDecoder)(unsafe.Pointer(&dec.mem[0]))
+	dec.p = (*C.struct_OpusCustomDecoder)(unsafe.Pointer(&dec.mem[0]))
 	errno := C.opus_custom_decoder_init(
 		dec.p,
 		dec.mode.P,
@@ -111,66 +111,6 @@ func (dec *DecoderCustom) DecodeFloat32(data []byte, pcm []float32) (int, error)
 		return 0, Error(n)
 	}
 	return n, nil
-}
-
-// DecodePLC recovers a lost packet using Opus Packet Loss Concealment feature.
-//
-// The supplied buffer needs to be exactly the duration of audio that is missing.
-// When a packet is considered "lost", `DecodePLC` and `DecodePLCFloat32` methods
-// can be called in order to obtain something better sounding than just silence.
-// The PCM needs to be exactly the duration of audio that is missing.
-// `LastPacketDuration()` can be used on the decoder to get the length of the
-// last packet.
-//
-// This option does not require any additional encoder options. Unlike FEC,
-// PLC does not introduce additional latency. It is calculated from the previous
-// packet, not from the next one.
-func (dec *DecoderCustom) DecodePLC(pcm []int16) error {
-	if dec.p == nil {
-		return errDecUninitialized
-	}
-	if len(pcm) == 0 {
-		return fmt.Errorf("opus: target buffer empty")
-	}
-	if cap(pcm)%dec.channels != 0 {
-		return fmt.Errorf("opus: output buffer capacity must be multiple of channels")
-	}
-	n := int(C.opus_custom_decode(
-		dec.p,
-		nil,
-		0,
-		(*C.opus_int16)(&pcm[0]),
-		C.int(cap(pcm)/dec.channels),
-		0))
-	if n < 0 {
-		return Error(n)
-	}
-	return nil
-}
-
-// DecodePLCFloat32 recovers a lost packet using Opus Packet Loss Concealment feature.
-// The supplied buffer needs to be exactly the duration of audio that is missing.
-func (dec *DecoderCustom) DecodePLCFloat32(pcm []float32) error {
-	if dec.p == nil {
-		return errDecUninitialized
-	}
-	if len(pcm) == 0 {
-		return fmt.Errorf("opus: target buffer empty")
-	}
-	if cap(pcm)%dec.channels != 0 {
-		return fmt.Errorf("opus: output buffer capacity must be multiple of channels")
-	}
-	n := int(C.opus_custom_decode_float(
-		dec.p,
-		nil,
-		0,
-		(*C.float)(&pcm[0]),
-		C.int(cap(pcm)/dec.channels),
-		0))
-	if n < 0 {
-		return Error(n)
-	}
-	return nil
 }
 
 // LastPacketDuration gets the duration (in samples)
