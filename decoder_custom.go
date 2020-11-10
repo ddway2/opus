@@ -2,7 +2,6 @@ package opus
 
 import (
 	"fmt"
-	"unsafe"
 )
 
 /*
@@ -19,10 +18,11 @@ bridge_decoder_custom_get_last_packet_duration(OpusCustomDecoder *st, opus_int32
 */
 import "C"
 
+var errDecCustomUninitialized = fmt.Errorf("opus decoder uninitialized")
+
 type DecoderCustom struct {
 	p *C.struct_OpusCustomDecoder
 
-	mem      []byte
 	channels int
 	mode     *OpusMode
 }
@@ -44,19 +44,25 @@ func (dec *DecoderCustom) Init(channels int, mode *OpusMode) error {
 		return fmt.Errorf("Number of channels must be 1 or 2: %d", channels)
 	}
 
-	size := C.opus_custom_decoder_get_size(mode.P, C.int(channels))
 	dec.channels = channels
 	dec.mode = mode
-	dec.mem = make([]byte, size)
-	dec.p = (*C.struct_OpusCustomDecoder)(unsafe.Pointer(&dec.mem[0]))
-	errno := C.opus_custom_decoder_init(
-		dec.p,
+	var errno C.int
+
+	dec.p = C.opus_custom_decoder_create(
 		dec.mode.P,
-		C.int(channels))
-	if errno != 0 {
+		C.int(channels),
+		&errno)
+	if int(errno) != 0 {
 		return Error(errno)
 	}
 	return nil
+}
+
+func (dec *DecoderCustom) Close() {
+	if dec.p != nil {
+		C.opus_custom_decoder_destroy(dec.p)
+	}
+	dec.p = nil
 }
 
 // Decode encoded Opus data into the supplied buffer. On success, returns the

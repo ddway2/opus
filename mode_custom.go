@@ -25,7 +25,7 @@ func NewOpusMode(sample_rate int32, frame_size int) (*OpusMode, error) {
 func (mode *OpusMode) Init(sample_rate int32, frame_size int) error {
 	var err C.int
 	mode.P = C.opus_custom_mode_create(C.opus_int32(sample_rate), C.int(frame_size), &err)
-	if int(err) != 0 {
+	if int(err) != 0 || mode.P == nil {
 		return Error(int(err))
 	}
 
